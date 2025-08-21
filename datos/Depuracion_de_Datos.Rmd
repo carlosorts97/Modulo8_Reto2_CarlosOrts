@@ -1,0 +1,95 @@
+---
+title: "Depuración de Datos"
+author: "Carlos Orts"
+date: "2025-08-20"
+output: html_document
+---
+
+# ==============================
+# 1. Librerias
+# ==============================
+```{r}
+if(!require(readr)){install.packages('readr')
+  library(readr)
+}
+
+if(!require(haven)){install.packages('haven')
+  library(haven)
+}
+
+if(!require(dplyr)){install.packages('dplyr')
+  library(dplyr)
+}
+
+if(!require(tidyr)){install.packages('tidyr')
+  library(tidyr)
+}
+#rm(list = ls())
+```
+# ==============================
+# 2. Cargar los datos
+# ==============================
+```{r}
+
+# CSV con el % de trabajadores autónomos por país
+dat_self_employed <- read.csv("self_employed_percent_of_employment.csv")
+
+# CSV con el gdp por país
+dat_gdp <- read.csv("gdp_pcap.csv")
+```
+
+# ======================================
+# 3. Transformación de los datos a formato "tidy"
+# ======================================
+
+## 3.1 Transformación del Data frame que contiene la info de los trabajadores autónomos 
+```{r}
+
+dat_self <- dat_self_employed %>%
+  
+  # Pasar de formato ancho (X1991, X1992, ...) a formato largo
+  pivot_longer(
+    cols = starts_with("X"),          # Selecciona todas las columnas que empiezan con "X"
+    names_to = "year",                 # Crea nueva columna "year" con los nombres de las columnas
+    values_to = "self_employed_perc"   # Crea nueva columna con los valores numéricos
+  ) %>%
+  
+  # Limpiar columna "year"
+  mutate(year = as.numeric(gsub("X", "", year)))   # Quita la "X" y convierte a número
+
+print(dat_self)
+```
+
+## 3.2 Transformación del Data frame que contiene la info del GDP por país
+```{r}
+# Eliminar un rango de columnas, debido a que solo disponemos información del 1991 hasta el 2019 del porcentaje de trabajadores autónomos
+ dat_gdp <- dat_gdp %>%
+  select(-any_of(c(paste0("X", 1800:1990),
+                   paste0("X", 2020:2100))))
+
+
+dat_gdp_tidy <- dat_gdp %>%
+  
+  # Pasar de formato ancho (X1991, X1992, ...) a formato largo
+  pivot_longer(
+    cols = starts_with("X"),          # Selecciona todas las columnas que empiezan con "X"
+    names_to = "year",                 # Crea nueva columna "year" con los nombres de las columnas
+    values_to = "gdp"   # Crea nueva columna con los valores numéricos
+  ) %>%
+  
+  # Limpiar columna "year"
+  mutate(year = as.numeric(gsub("X", "", year)))   # Quita la "X" y convierte a número
+
+print(dat_gdp_tidy)
+```
+## 3.3 Unión de los datasets por país y año
+```{r}
+#Usamos inner join para mantener solo las filas donde ambos tienen datos cuando coincide país y año.
+dat_base <- dat_self %>% 
+    inner_join(dat_gdp_tidy, by = c("country", "year")) 
+
+#Confirmamos que no hay ningún NA
+sum(is.na(dat_base))
+
+print(dat_base)
+```
