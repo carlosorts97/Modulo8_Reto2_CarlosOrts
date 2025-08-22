@@ -92,4 +92,6 @@ dat_base <- dat_self %>%
 sum(is.na(dat_base))
 
 print(dat_base)
+
+write.csv(dat_base, "data_base.csv")
 ```
