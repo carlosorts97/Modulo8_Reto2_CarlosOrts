@@ -24,13 +24,16 @@ if(!require(dplyr)){install.packages('dplyr')
 if(!require(tidyr)){install.packages('tidyr')
   library(tidyr)
 }
+
+if(!require(countrycode)){install.packages('countrycode')
+  library(countrycode)
+}
 #rm(list = ls())
 ```
 # ==============================
 # 2. Cargar los datos
 # ==============================
 ```{r}
-
 # CSV con el % de trabajadores autónomos por país
 dat_self_employed <- read.csv("self_employed_percent_of_employment.csv")
 
@@ -92,6 +95,59 @@ dat_base <- dat_self %>%
 sum(is.na(dat_base))
 
 print(dat_base)
+```
+## 3.4 Remplazamos las abreviaturas y añadimos el continente con el paquete "countrycode"
+```{r}
+list(unique(dat_base$country))
 
+# Corregimos los nombres para que no nos den errores con el paquete MAPS
+recode_names <- c(
+  # Diferencias de abreviaciones
+  "UAE"        = "United Arab Emirates",
+  
+  # Variaciones en nombres de países
+  "Cote d'Ivoire"      = "Ivory Coast",
+  "Congo, Dem. Rep."   = "Democratic Republic of the Congo",
+  "Congo, Rep."        = "Republic of Congo",
+  "Kyrgyz Republic"    = "Kyrgyzstan",
+  "Lao"                = "Laos",
+  "St. Lucia"          = "Saint Lucia",
+  "Slovak Republic"    = "Slovakia",
+  "Eswatini"           = "Swaziland",
+  "Trinidad and Tobago"= "Trinidad",   
+  "St. Vincent and the Grenadines" = "Saint Vincent",
+  "Palestine"          = "Palestine"  
+)
+
+# Reemplazar antes de usar countrycode
+dat_base <- dat_base %>%
+  mutate(
+    country = recode(country, !!!recode_names, .default = country),
+    continent = countrycode(country,
+                            origin = "country.name",
+                            destination = "continent")
+  )
+```
+
+## 3.5 Transformamos la columna GDP a valores númericos
+```{r}
+dat_base <- dat_base %>%           
+  mutate(                          # mutate() permite crear o modificar columnas existentes
+    gdp = case_when(               # Reescribimos la columna "gdp" según distintas condiciones
+
+      # --- CASO 1: valores terminados en "k" ---
+      str_detect(gdp, "k$") ~      # str_detect() detecta si el valor termina en "k" ($ indica final del string)
+        as.numeric(str_remove(gdp, "k")) * 1e3,  # str_remove() quita la "k", as.numeric() convierte a número y se multiplica por 1000
+
+      # --- CASO 2: cualquier otro valor ---
+      TRUE ~ as.numeric(gdp)       # 3c. Para todos los demás casos, convierte directamente a número
+    )
+  )
+```
+
+
+
+# 4. Crear archivo CSV
+```{r}
 write.csv(dat_base, "data_base.csv")
 ```
