@@ -1,0 +1,75 @@
+---
+title: "Dashboard trabajadores autónomos (1991-2019)"
+author: Carlos Orts
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    social: menu
+    source_code: embed
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(maps)
+library(DT)
+library(lorem)
+```
+
+```{r}
+dat_base <- read.csv("../datos/data_base.csv")
+```
+
+Gráficos {data-icon="fa-signal"}
+=======================================================================
+
+Column{.sidebar data-height=150}
+-----------------------------------------------------------------------
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+
+```
+
+### Chart B
+
+```{r}
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart C
+
+```{r}
+
+```
+
+### Chart D
+
+```{r}
+
+```
+
+Tablas {data-icon="fa-table"}
+=======================================================================
+```{r}
+datatable(dat_base,
+          caption = 'Trabajadores autónomos (1991-2019)',
+          rownames = T,
+          filter = 'top',
+          options = list(pageLenght = 25)
+          
+          )
+```
+
+
+Acerca del estudio {data-icon="fa-globe"}
+=======================================================================
