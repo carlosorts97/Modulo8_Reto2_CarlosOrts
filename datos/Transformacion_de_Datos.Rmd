@@ -28,7 +28,6 @@ if(!require(tidyr)){install.packages('tidyr')
 if(!require(countrycode)){install.packages('countrycode')
   library(countrycode)
 }
-#rm(list = ls())
 ```
 # ==============================
 # 2. Cargar los datos
