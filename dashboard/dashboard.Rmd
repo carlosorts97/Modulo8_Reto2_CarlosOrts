@@ -11,52 +11,473 @@ runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
-library(flexdashboard)
-library(tidyverse)
-library(maps)
-library(DT)
-library(lorem)
+if(!require(flexdashboard)){install.packages('flexdashboard')
+  library(flexdashboard)
+}
+if(!require(tidyverse)){install.packages('tidyverse')
+  library(tidyverse)
+}
+if(!require(shiny)){install.packages('shiny')
+  library(shiny)
+}
+if(!require(maps)){install.packages('maps')
+  library(maps)
+}
+if(!require(DT)){install.packages('DT')
+  library(DT)
+}
+if(!require(ggplot2)){install.packages('ggplot2')
+  library(ggplot2)
+}
+if(!require(readr)){install.packages('readr')
+  library(readr)
+}
+if(!require(rmarkdown)){install.packages('rmarkdown')
+  library(rmarkdown)
+}
+if(!require(forcats)){install.packages('forcats')
+  library(forcats)
+}
 ```
+
 
 ```{r}
-dat_base <- read.csv("../datos/data_base.csv")
-```
+# Cargar Datos 
+dat_base <- read_csv("../datos/data_base.csv")
 
+# Definir paleta fija para continentes
+continent_colors <- c(
+  "Europe" = "#1f78b4",
+  "Asia" = "#33a02c",
+  "Africa" = "#e31a1c",
+  "Americas" = "#ff7f00",
+  "Oceania" = "#6a3d9a"
+)
+```
 Gráficos {data-icon="fa-signal"}
 =======================================================================
 
-Column{.sidebar data-height=150}
+
+Column {.sidebar data-height=150}
 -----------------------------------------------------------------------
-
-Column {data-width=650}
------------------------------------------------------------------------
-
-### Chart A
-
 ```{r}
+selectInput(
+  "year_sel", 
+  label='Selecciona un año', 
+  choices = sort(unique(dat_base$year)), 
+  selected = "2019", 
+  width = '200px'
+  )
+
+selectInput(
+  "country_sel", 
+  label='Selecciona un pais', 
+  choices = unique(dat_base$country), 
+  selected = "Spain", 
+  width = '200px')
+
+sliderInput(  
+  inputId = "years_sel",
+  label = "Selecciona un rango de años",
+  min = min(dat_base$year),
+  max = max(dat_base$year),
+  value = c(1991, 2019),   # rango inicial
+  step = 1,                # incrementos de 1 año
+  sep = ""                 # evita que ponga comas en miles
+)
+
+checkboxGroupInput(
+  inputId = "continents_sel",            # ID del input
+  label = "Selecciona los continentes",  # Texto que se muestra
+  choices = unique(dat_base$continent),  # Lista de opciones
+  selected = unique(dat_base$continent)  # Por defecto todos seleccionados
+)
 
 ```
 
-### Chart B
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Porcentaje de trabajadores autónomos global
 
 ```{r}
+renderPlot({
+
+  # ------------------------------
+  # Calcular la media del % de autoempleo por país a lo largo de todos los años
+  # ------------------------------
+  df_mean_per_country <- dat_base %>%
+    group_by(country) %>%                                 # Agrupa todas las filas por país
+    summarise(mean = mean(self_employed_perc, na.rm = TRUE))  # Calcula la media ignorando los NA
+
+  # ------------------------------
+  # Obtener el mapa base del mundo en formato dataframe con coordenadas
+  # ------------------------------
+  world_map <- map_data("world")  # Contiene: long, lat, region (país), subregion, group
+
+  # ------------------------------
+  # Unir los datos del mapa con el promedio de autoempleo por país
+  # ------------------------------
+  map_data_joined <- world_map %>%
+    left_join(df_mean_per_country, by = c("region" = "country"))  
+  # Nota: "region" es el nombre de país en el mapa y lo unimos con nuestra columna "country"
+
+  # ------------------------------
+  # Crear el mapa con ggplot
+  # ------------------------------
+  ggplot(map_data_joined, aes(x = long, y = lat, group = group, fill = mean)) +
+
+    # Dibujar los polígonos de los países con borde blanco
+    geom_polygon(color = "white") +
+
+    # Escala de color: azul claro para valores bajos, rojo oscuro para altos
+    # Los países sin datos se muestran en gris claro
+    scale_fill_gradient(low = "lightblue", high = "darkred", na.value = "grey90") +
+
+    # Títulos y leyenda
+    labs(
+      subtitle = "Promedio de 1991 a 2019",  # subtítulo del mapa
+      fill = "% Autoempleo"                  # título de la leyenda
+    ) +
+
+    # Tema minimalista para fondo limpio
+    theme_minimal() +
+
+    # Ajustes de tema adicionales
+    theme(
+      legend.position = "none"              # se oculta la leyenda para mejorar la visualización
+    ) +
+
+    # Mantener proporción real del mapa (evita distorsión)
+    coord_fixed(1.3)
+})
+```
+
+
+### Relación entre PIB per cápita y % de autoempleo en `r reactive(input$year_sel)`
+
+
+```{r}
+renderPlot({
+  # ------------------------------
+  # Capturamos el año seleccionado por el usuario en el input
+  # ------------------------------
+  year_sel <- input$year_sel
+  
+  # ------------------------------
+  # Filtrar el dataset para el año seleccionado y solo los continentes elegidos
+  # ------------------------------
+  df_scatter <- dat_base %>%
+    filter(
+      year == year_sel,                  # Mantener solo filas del año elegido
+      continent %in% input$continents_sel  # Mantener solo continentes seleccionados
+    )
+  
+  # ------------------------------
+  # Crear el diagrama de dispersión (scatterplot)
+  # ------------------------------
+  ggplot(df_scatter, aes(x = gdp, y = self_employed_perc, color = continent)) +
+    
+    # Dibujar puntos con transparencia y tamaño
+    geom_point(alpha = 0.7, size = 3) +
+    
+    # Etiquetas y títulos
+    labs(
+      subtitle = paste("Año:", year_sel),  # Subtítulo dinámico con el año
+      x = "PIB per cápita (USD)",          # Etiqueta del eje X
+      y = "% Autoempleo",                  # Etiqueta del eje Y
+      color = "Continente"                 # Título de la leyenda
+    ) +
+    
+    # Tema minimalista para que el gráfico se vea limpio
+    theme_minimal() +
+    
+    # Ajustes de estilo de los textos
+    theme(
+      plot.title = element_text(face = "bold", size = 14),  # Título en negrita
+      plot.subtitle = element_text(size = 12)              # Subtítulo tamaño 12
+    ) +
+    
+    # Formato del eje X con separadores de miles
+    scale_x_continuous(labels = scales::comma) +
+    
+    # Paleta de colores para los continentes
+     scale_color_manual(values = continent_colors)  # colores consistentes
+})
 
 ```
 
 Column {data-width=350}
 -----------------------------------------------------------------------
 
-### Chart C
+### 10 países con mayor y menor % de autoempleo
 
 ```{r}
+renderPlot({
+  
+  # ------------------------------
+  # Capturamos el año seleccionado por el usuario en el input
+  # ------------------------------
+  year_sel <- input$year_sel 
+  
+  # ------------------------------
+  # Filtrar datos y seleccionar top y bottom 10 países por % de autoempleo
+  # ------------------------------
+  
+  # Top 10 países con mayor % de autoempleo en el año seleccionado
+  top10 <- dat_base %>%
+    filter(year == year_sel) %>%             # Filtra el dataframe por el año elegido
+    arrange(desc(self_employed_perc)) %>%    # Ordena de mayor a menor según % de autoempleo
+    slice(1:10)                              # Selecciona las primeras 10 filas (top 10)
+  
+  # Bottom 10 países con menor % de autoempleo en el año seleccionado
+  bottom10 <- dat_base %>%
+    filter(year == year_sel) %>%             # Filtra por el mismo año
+    arrange(self_employed_perc) %>%          # Ordena de menor a mayor
+    slice(1:10)                              # Selecciona las primeras 10 filas (bottom 10)
+  
+  # Combinar top10 y bottom10 en un solo dataframe
+  df_lollipop <- bind_rows(top10, bottom10) %>%   
+    mutate(country = factor(country,          # Convierte la columna 'country' en factor
+                            levels = country[order(self_employed_perc)]))  
+  # Esto asegura que los países se muestren en el eje X en orden ascendente de % de autoempleo
+  
+  # ------------------------------
+  # Lollipop plot
+  # ------------------------------
+  
+  ggplot(df_lollipop, aes(x = country, y = self_employed_perc, color = continent)) +  
+    # Eje X = países, eje Y = % autoempleo, color por continente
+    
+    geom_segment(aes(x = country, xend = country, y = 0, yend = self_employed_perc),
+                 color = "grey") +  # Dibuja la "varilla" desde 0 hasta el punto (línea vertical)
+    
+    geom_point(size = 4) +  # Dibuja el "lollipop" en el extremo de la varilla
+    
+    # Etiquetas y títulos
+    labs(
+      subtitle = paste("Año", year_sel),  # Subtítulo mostrando el año seleccionado
+      x = "",                              # Eje X sin etiqueta
+      y = "% Autoempleo"                   # Eje Y con etiqueta
+    ) +
+    
+    # Tema minimalista
+    theme_minimal() +
+    
+     scale_color_manual(values = continent_colors) +  # colores consistentes
+    
+    # Ajustes de tema adicionales
+    theme(
+      plot.title = element_text(face = "bold", size = 14),  # Formato del título
+      plot.subtitle = element_text(size = 12),              # Formato del subtítulo
+      axis.text.x = element_text(angle = 45, hjust = 1)     # Rotar etiquetas del eje X para mejor lectura
+    )
+})
+```
+
+
+### Evolución del % de trabajadores autónomos en
+```{r}
+renderPlot({
+  
+  # ------------------------------
+  # Capturamos el año seleccionado por el usuario en el input
+  # ------------------------------
+  country_sel <- input$country_sel  # Recoge el país seleccionado por el usuario
+  
+  # ------------------------------
+  # Filtrar datos del país seleccionado dentro del rango de años elegido
+  # ------------------------------
+  df_country <- dat_base %>%
+    filter(
+      country == input$country_sel,           # Filtra solo el país seleccionado
+      year >= input$years_sel[1],             # Límite inferior del slider de años
+      year <= input$years_sel[2]              # Límite superior del slider de años
+    ) %>%
+    select(year, self_employed_perc, continent)  # Selecciona solo las columnas necesarias
+  
+  # ------------------------------
+  # Calcular la media continental
+  # ------------------------------
+  continent_sel <- df_country$continent[1]  # Tomamos el continente del país seleccionado (asumimos que es único)
+  
+  df_continent <- dat_base %>%
+    filter(
+      continent == continent_sel,             # Filtra todos los países del mismo continente
+      year >= input$years_sel[1],             # Límite inferior del slider de años
+      year <= input$years_sel[2]              # Límite superior del slider de años
+    ) %>%
+    group_by(year) %>%
+    summarise(mean_self_employed_perc = mean(self_employed_perc, na.rm = TRUE))  
+    # Calcula la media de % de autoempleo por año para todo el continente
+  
+  # ------------------------------
+  # Crear gráfico combinado: barras del país y línea de media continental
+  # ------------------------------
+  ggplot() +
+    
+    # Barras del país seleccionado
+    geom_col(data = df_country, 
+             aes(x = factor(year), y = self_employed_perc), 
+             fill = "steelblue") +  
+    
+    # Línea de la media continental
+    geom_line(data = df_continent, 
+              aes(x = factor(year), y = mean_self_employed_perc, group = 1), 
+              color = "red", size = 1.2) +  
+    
+    # Puntos de la media continental
+    geom_point(data = df_continent,
+               aes(x = factor(year), y = mean_self_employed_perc), 
+               color = "red", size = 2) +  
+    
+    # Etiquetas y títulos
+    labs(
+      subtitle = paste("Comparado con la media del continente:", continent_sel),
+      x = "Año",
+      y = "% Autoempleo",
+      caption = "Barras: país | Línea roja: media continental"
+    ) +
+    
+    # Tema minimalista
+    theme_minimal() +
+    
+    # Ajustes de tema adicionales
+    theme(
+      plot.title = element_text(face = "bold", size = 14),     # Formato del título
+      plot.subtitle = element_text(size = 12),                 # Formato del subtítulo
+      axis.text.x = element_text(angle = 45, hjust = 1)        # Rotar etiquetas eje X para mejor lectura
+    )
+})
+```
+
+column {data-width=350}
+-----------------------------------------------------------------------
+
+### Distribución del % de trabajadores autónomos por continente
+
+```{r}
+renderPlot({
+  # ------------------------------
+  # Selección del año a analizar
+  # ------------------------------
+  year_sel <- input$year_sel
+  
+  # ------------------------------
+  # Filtrar datos según año y continentes seleccionados
+  # ------------------------------
+  df_box <- dat_base %>%
+    filter(
+      year == year_sel,
+      continent %in% input$continents_sel
+    )
+  
+  # ------------------------------
+  # Reordenar continentes por mediana de autoempleo
+  # ------------------------------
+  df_box <- df_box %>%
+    mutate(continent = fct_reorder(continent, self_employed_perc, median))
+  
+  # ------------------------------
+  # Calcular la media global de autoempleo
+  # ------------------------------
+  global_mean <- mean(df_box$self_employed_perc, na.rm = TRUE)
+  
+  # ------------------------------
+  # Crear boxplot
+  # ------------------------------
+  ggplot(df_box, aes(x = continent, y = self_employed_perc, fill = continent)) +
+    geom_boxplot(alpha = 0.7) +
+    geom_jitter(width = 0.2, color = "black", alpha = 0.5, size = 2) +
+    geom_hline(yintercept = global_mean, linetype = "dashed", color = "red", size = 1) +
+    labs(
+      subtitle = paste("Año:", year_sel),
+      x = "Continente",
+      y = "% Autoempleo"
+    ) +
+    theme_minimal() +
+    scale_fill_manual(values = continent_colors) +  # <-- aquí aplicas los colores consistentes
+    theme(
+      plot.title = element_text(face = "bold", size = 14),
+      plot.subtitle = element_text(size = 12),
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "none"
+    )
+})
 
 ```
 
-### Chart D
+### Evolución del % de autoempleo por continente
 
 ```{r}
+renderPlot({
 
+  # ------------------------------
+  # Evitar que el rango de años sea menor a 4
+  # ------------------------------
+  # Esto es porque al seleccionar menos de 4 años estos se mostraban alterados en el gráfico
+  observe({
+    if (diff(input$years_sel) < 5) {
+      updateSliderInput(
+        session,
+        "years_sel",
+        value = c(input$years_sel[1], input$years_sel[1] + 3)  # ajusta el rango mínimo a 4 años
+      )
+    }
+  })
+  
+  # ------------------------------
+  # Agrupar datos por continente y año
+  # ------------------------------
+  # Calcula el promedio de autoempleo por continente para los años seleccionados
+  df_line <- dat_base %>%
+    filter(
+      year >= input$years_sel[1],        # límite inferior del slider
+      year <= input$years_sel[2],        # límite superior del slider
+      continent %in% input$continents_sel  # filtra solo los continentes seleccionados
+    ) %>%
+    group_by(continent, year) %>%       # agrupa por continente y año
+    summarise(promedio_cont = mean(self_employed_perc, na.rm = TRUE)) %>%  # calcula promedio ignorando NA
+    ungroup()                            # desagrupa para evitar problemas posteriores
+  
+  # ------------------------------
+  # Calcular media global por año
+  # ------------------------------
+  df_global <- dat_base %>%
+    filter(
+      year >= input$years_sel[1],  # límite inferior
+      year <= input$years_sel[2]   # límite superior
+    ) %>%
+    group_by(year) %>%               # agrupa por año
+    summarise(promedio_global = mean(self_employed_perc, na.rm = TRUE))  # promedio global
+  
+  # ------------------------------
+  # Crear gráfico de líneas
+  # ------------------------------
+  ggplot() +
+    # Línea por continente con color según continente
+    geom_line(data = df_line, aes(x = year, y = promedio_cont, color = continent), size = 1.2) +
+    
+    # Línea de media global en negro y línea discontinua
+    geom_line(data = df_global, aes(x = year, y = promedio_global), color = "black", linetype = "dashed", size = 1) +
+    
+    # Etiquetas y títulos
+    labs(
+      subtitle = "Con línea de media global",
+      x = "Año",
+      y = "% Autoempleo",
+      color = "Continente"  # título de la leyenda
+    ) +
+    
+    # Tema minimalista
+    theme_minimal() +
+    
+    # Aplicar colores consistentes a los continentes
+    scale_color_manual(values = continent_colors)  
+})
 ```
+
 
 Tablas {data-icon="fa-table"}
 =======================================================================
@@ -69,7 +490,3 @@ datatable(dat_base,
           
           )
 ```
-
-
-Acerca del estudio {data-icon="fa-globe"}
-=======================================================================
