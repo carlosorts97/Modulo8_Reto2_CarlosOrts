@@ -1,0 +1,40 @@
+\documentclass{article}
+
+\title{Informe técnico: Análisis del Autoempleo}
+\author{Carlos Orts}
+\date{\Sexpr{Sys.Date()}}
+
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{amsmath}
+\usepackage{Sweave}
+
+\usepackage[T1]{fontenc}
+
+\usepackage{geometry}
+\geometry{
+a4paper,
+total={170mm, 257mm},
+left=20mm,
+top=20mm,
+}
+
+\renewcommand{\tablename}{Tabla}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+\maketitle
+
+
+<<>>=
+if(!require(tinytex)){
+  install.packages('tinytex')
+  library(tinytex)
+}
+
+#tinytex::tlmgr_install('blindtext')
+#tinytex::tlmgr_install('babel')
+@
+
+
+\end{document}
