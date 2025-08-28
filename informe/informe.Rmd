@@ -168,23 +168,3 @@ Estos datos permiten **visualizar y cuantificar** la tendencia observada en los 
 4. Aunque la relación general es consistente, algunos continentes como Oceanía muestran que un porcentaje alto de autoempleo no siempre se asocia a PIB bajos, sugiriendo que factores culturales, sectoriales o económicos específicos también influyen.  
 
 5. Estos hallazgos destacan la importancia de combinar análisis **temporal, geográfico y económico** para comprender las dinámicas del autoempleo y orientar futuras investigaciones o políticas públicas en materia laboral.
-
-
-## Conclusiones
-
-- **Variación entre continentes:** África con mayor autoempleo, Europa con menor → diferencias estructurales y culturales.  
-
-- **Evolución temporal (1991–2019):** África y Oceanía disminuyen ligeramente, Asia tuvo pico en 2001 seguido de descenso, Europa estable y baja.  
-
-- **Relación autoempleo vs PIB:** países con más autónomos suelen tener PIB más bajo; África ejemplifica esto, Europa el caso contrario.  
-
-- **Excepciones:** Oceanía muestra que autoempleo alto no siempre significa PIB bajo → influyen factores culturales, sectoriales o económicos.  
-
-- **Importancia del análisis combinado:** temporal, geográfico y económico para entender dinámicas del autoempleo y guiar políticas laborales.
-
-
-
-
-
-
-
