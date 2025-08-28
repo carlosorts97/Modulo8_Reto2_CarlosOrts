@@ -3,7 +3,9 @@ title: 'Informe técnico: Análisis del Autoempleo '
 author: "Carlos Orts"
 date: "2025-08-25"
 output:
-  html_document: 
+  pdf_document:
+    toc: true
+  html_document:
     toc: true
     number_sections: true
     toc_float: true
@@ -92,9 +94,11 @@ Para facilitar la visualización y comprensión de los datos, a continuación se
 ## Diferencias entre continentes
 
 **Figura 3: Boxplot de trabajadores autónomos por continentes (1991)**
+
 ![](img/boxplot_continentes_1991.png){width=400px}
 
 **Figura 4: Boxplot de trabajadores autónomos por continentes (2019)**
+
 ![](img/boxplot_continentes_2019.png){width=400px}
 
 ## Diferencias entre continentes

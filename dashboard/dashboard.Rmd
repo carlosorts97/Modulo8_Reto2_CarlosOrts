@@ -277,7 +277,7 @@ renderPlot({
 ```
 
 
-### Evolución del % de trabajadores autónomos en
+### Evolución del % de trabajadores autónomos en `r reactive(input$country_sel)`
 ```{r}
 renderPlot({
   
