@@ -132,7 +132,7 @@ Una guía rápida para que cualquiera pueda reproducirlo:
 - Relación negativa entre autoempleo y PIB per cápita.  
 
 📄 Informe completo: [`informe/informe.pdf`](informe/informe.pdf)  
-📊 Dashboard interactivo: [`dashboard/dashboard.html`](dashboard/dashboard.html)
+📊 Dashboard interactivo: [`dashboard/dashboard.Rmd`](dashboard/dashboard.Rmd)
 
 ## 8. Autores y créditos
 Proyecto realizado por **Carlos Orts** en el marco del *Módulo 8 – 'Data visualization' y 'Reproducibility'*.  
